@@ -1,0 +1,179 @@
+import React, { useEffect } from 'react';
+import Popover from '@mui/material/Popover';
+import { TextField, Paper, Grid, Button, FormControl, InputLabel, MenuItem } from '@mui/material';
+import Fab from '@mui/material/Fab';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchCars, selectuserData } from '../store/slice/userSlice';
+import Container from '@mui/material/Container';
+import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
+import { Link } from 'react-router-dom';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+
+
+interface Types {
+    category_id: string;
+    category_name: string;
+    category_image: string;
+}
+
+
+
+export default function Type_menu() {
+    const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
+    const dispatch = useDispatch<any>();
+    const username = useSelector(selectuserData);
+    const [typesware, settypesware] = React.useState<Types[]>([]);
+    const [selectedGroup, setSelectedGroup] = React.useState<string>('');
+
+    // const status = useSelector(selectStatus);
+
+    useEffect(() => {
+        dispatch(fetchCars());
+    }, [dispatch]);
+
+    const [formData, setFormData] = React.useState({
+        group_name: "",
+        comment: "",
+    });
+
+    const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleInputChange = (key: string, value: string) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            [key]: value,
+        }));
+    };
+
+    const handleChange6 = (event: SelectChangeEvent) => {
+        setSelectedGroup(event.target.value as string);
+    };
+
+
+    const handleSubmit = async () => {
+        try {
+            console.log("formData before axios.post:", formData);
+
+            const response = await axios.post('http://127.0.0.1:7000/api/type/create-type', {
+                ...formData,
+                user_id: username.user_id,
+                category_id: selectedGroup,
+            });
+
+            console.log(response.data);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกสำเร็จ!',
+                text: 'มีการเพิ่มสถานะใหม่',
+            });
+        } catch (error) {
+            console.error("Error while submitting data:", error);
+
+            Swal.fire({
+                icon: 'error',
+                title: 'เกิดข้อผิดพลาด!',
+                text: 'มีข้อผิดพลาดในการเพิ่มสถานะ',
+            });
+        } finally {
+            handleClose();
+        }
+    };
+
+    const open = Boolean(anchorEl);
+    const id = open ? 'simple-popover' : undefined;
+
+
+    useEffect(() => {
+        fetch('http://127.0.0.1:7000/api/category/get-all')
+            .then(response => response.json())
+            .then(data => settypesware(data.result))
+            .catch(error => console.error('Error fetching group data:', error));
+    }, []);
+
+    return (
+        <div>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '1px', marginTop: '30px' }}>
+                <Link to={'/assets/view_status'}>
+                    <Fab
+                        sx={{ bgcolor: '#01345d', color: 'white', fontSize: '1rem', width: '36px', height: '56px', borderRadius: 0.5, boxShadow: 'none' }}
+                    >
+                        <RemoveRedEyeIcon />
+                    </Fab>
+                </Link>
+                <Fab
+                    aria-describedby={id}
+                    onClick={handleClick}
+                    sx={{ bgcolor: '#01345d', color: 'white', fontSize: '1rem', width: '36px', height: '56px', borderRadius: 0.5, boxShadow: 'none' }}
+                >
+                    <AddCircleOutlineIcon />
+                </Fab>
+            </div>
+
+            <Popover
+                id={id}
+                open={open}
+                anchorEl={anchorEl}
+                onClose={handleClose}
+                anchorOrigin={{
+                    vertical: 'center',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'center',
+                    horizontal: 'center',
+                }}
+            >
+                <div className='flex justify-between items-center ml-4 mr-4 mt-2 mb-2'>
+                    <div>เพิ่ม สถานะ</div>
+                    <div onClick={handleClose}>
+                        <CloseIcon />
+                    </div>
+                </div>
+                <hr />
+                <Paper sx={{ width: { xs: '340px', xl: '1200px' }, padding: '40px' }}>
+                    <Grid container spacing={2}>
+                        <Container maxWidth="sm">
+                            <TextField label="ชื่อประเภท" variant="outlined" fullWidth sx={{ marginTop: '10px' }} onChange={(e) => handleInputChange('type_name', e.target.value)} />
+                            <textarea id="comment" rows={4} className="mt-6 block p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-400 focus:ring-blue-500 focus:border-blue-500 " placeholder="คอมเม้นต์" onChange={(e) => handleInputChange('comment', e.target.value)}></textarea>
+
+                            <div className='mt-4'>
+                                <FormControl fullWidth >
+                                    <InputLabel id="demo-simple-select-label">ประเภท</InputLabel>
+                                    <Select
+                                        labelId="demo-simple-select-label"
+                                        id="demo-simple-select"
+                                        value={selectedGroup}
+                                        label="Age"
+                                        onChange={handleChange6}
+                                    >
+                                        {typesware.map(types => (
+                                            <MenuItem key={types.category_id} value={types.category_id}>
+                                                {types.category_name}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <div className='flex justify-center'>
+                                <Button variant="contained" onClick={handleSubmit} sx={{ backgroundColor: '#3f51b5', color: 'white', marginTop: '20px' }}>
+                                    บันทึก
+                                </Button>
+                            </div>
+                        </Container>
+                    </Grid>
+                </Paper>
+            </Popover>
+        </div>
+    );
+}

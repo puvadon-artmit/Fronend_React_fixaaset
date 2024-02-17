@@ -1,0 +1,13 @@
+.image-container {
+    position: relative;
+  }
+  
+  .click-point {
+    position: absolute;
+    width: 15px; 
+    height: 15px;
+    background-color: rgb(245, 27, 27); 
+    border-radius: 50%; 
+    pointer-events: none;
+  }
+  
